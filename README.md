@@ -141,6 +141,7 @@ The most important lessons from the results were:
 - `docs/model-card.md` - model documentation
 - `docs/README.md` - documentation overview
 - `notebooks/` or `src/` - analysis code, experiments, or helper scripts
+- - `notebooks/bbo_analysis.ipynb` - exploratory analysis of query history and optimisation trends
 - `results/` - summaries, observations, and supporting materials where applicable
 
 ## 5. Transparency and documentation
