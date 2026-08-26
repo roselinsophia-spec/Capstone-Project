@@ -60,6 +60,10 @@ later, potentially more advanced surrogate-style approaches such as Bayesian opt
 
 What makes my approach thoughtful is that I treat the challenge as both an optimisation problem and a learning problem. I am not only trying to improve the next query result, but also trying to make each query informative enough to improve future rounds. This README is intended to be a living document that I will continue updating as my strategy evolves throughout the capstone project.
 
+## Non-technical explanation
+
+This project explores how to improve decisions when working with a system whose internal rules are hidden. Over multiple rounds, I submitted candidate inputs to eight unknown functions and used the returned results to gradually learn which regions of the search space were more promising. My goal was to improve performance step by step by balancing exploration of uncertain areas with refinement of stronger regions. This reflects many real-world machine learning problems, such as hyperparameter tuning and simulation-based optimisation, where you cannot see the full mechanism directly and must rely on evidence from previous trials to guide the next decision.
+
 ## 5. Transparency and documentation
 This repository also includes supporting documentation to improve transparency, reproducibility, and interpretability:
     - [Datasheet](docs/datasheet.md) - documents the query history and function evaluation dataset, including motivation, composition, collection process, intended uses, distribution, and maintenance.
