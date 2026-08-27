@@ -1,0 +1,2 @@
+function,observations,dimensions,best_observed_input,best_observed_output,output_min,output_mean,output_median,output_std
+5,20,4,0.224189-0.846480-0.879484-0.878516,1088.8596181962705,0.1129397953712203,151.27187567901282,63.948431302362096,245.57598070645597
