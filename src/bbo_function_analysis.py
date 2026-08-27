@@ -23,8 +23,9 @@ N_CANDIDATES = 20_000
 KAPPA = 2.0
 XI = 0.01
 ROOT = Path(__file__).resolve().parent
-DATA_DIR = ROOT / "initial_data"
-RESULTS_DIR = ROOT / "results"
+PROJECT_ROOT = ROOT.parent
+DATA_DIR = PROJECT_ROOT / "data"
+RESULTS_DIR = PROJECT_ROOT / "results"
 
 
 def load_data(function_id: int) -> tuple[np.ndarray, np.ndarray]:
