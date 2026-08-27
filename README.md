@@ -2,152 +2,301 @@
 
 ## Non-technical explanation
 
-This project explores how to make better decisions when working with a system whose internal rules are hidden. Over multiple rounds, I submitted candidate inputs to eight unknown functions and used the returned outputs to gradually learn which regions of the search space were more promising. My goal was to improve performance step by step by balancing exploration of uncertain areas with refinement of stronger regions. This reflects many real-world machine learning problems, such as hyperparameter tuning and simulation-based optimisation, where you cannot inspect the full mechanism directly and must rely on evidence from previous trials to guide the next decision.
+This project investigates how to make effective decisions when the internal rules of a system are hidden. I analysed observations from eight unknown functions and developed a Bayesian optimisation pipeline to identify promising inputs for future evaluation. The method builds an approximate model from the available evidence and balances exploring uncertain areas with refining regions expected to perform well. Three query-selection strategies were compared. The analysis reports the strongest course-provided observations and generates new candidate inputs. These candidates are recommendations rather than confirmed improvements because they have not been evaluated by the hidden functions. This approach reflects real applications such as hyperparameter tuning, engineering design and simulation-based optimisation.
 
 ## 1. Project overview
 
-This repository documents my work on a **black-box optimisation (BBO) capstone challenge**. In this challenge, I propose new query points for multiple unknown functions, receive evaluated outputs, and refine my strategy over repeated rounds as more data becomes available.
+This repository documents my work on a **Black-Box Optimisation (BBO) capstone challenge**. Black-box optimisation is useful when the mathematical structure of an objective function is unavailable or too expensive to evaluate extensively.
 
-The overall goal of the BBO capstone project is to learn how to make **better optimisation decisions under uncertainty**. This is highly relevant in real-world machine learning because many important tasks behave like black-box problems. Examples include:
-- hyperparameter tuning
-- simulation-based optimisation
-- engineering design
-- expensive evaluation problems where the true objective function is unknown or too complex to model directly
+The project contains eight synthetic hidden functions. For each function, the available information consists of:
 
-This capstone project supports my professional development by helping me strengthen skills in:
-- iterative modelling
-- optimisation
-- experiment tracking
-- uncertainty-aware decision making
-- technical communication
+- previously evaluated input points
+- corresponding observed outputs
+- the requirement to maximise the output
+- the constraint that every input coordinate must remain between 0 and 1
 
-## Data
+The objective is to use the available observations efficiently and propose promising candidate points for future evaluation.
 
-This project uses the **query history and returned function evaluations** from the course Black-Box Optimisation (BBO) capstone challenge. The challenge is based on the **NeurIPS 2020 Black-Box Optimisation competition context**, where participants iteratively propose query points for several unknown functions and receive only the resulting outputs.
+This project demonstrates skills in:
 
-In this capstone, I worked with **eight unknown functions**, each with a fixed input dimensionality, and the dataset grew over time as one new evaluated point per function was added in each round.
+- exploratory data analysis
+- Bayesian optimisation
+- Gaussian Process modelling
+- uncertainty-aware decision-making
+- experiment organisation
+- reproducible Python development
+- technical and non-technical communication
 
-The data consists of:
-- submitted query points for each function
-- returned response values from the challenge system
-- round-by-round optimisation history
+## 2. Data
 
-Because this is an iterative challenge rather than a standard static dataset, the core data is generated through the optimisation process itself. Any large supporting files should be linked externally rather than stored directly in the repository.
+The project uses the official starter data supplied for the course Black-Box Optimisation challenge. The data contains observed inputs and corresponding outputs for eight synthetic hidden functions.
 
-## 2. Inputs and outputs
+| Function | Observations | Input dimensions | Objective |
+|---|---:|---:|---|
+| Function 1 | 10 | 2 | Maximise |
+| Function 2 | 10 | 2 | Maximise |
+| Function 3 | 15 | 3 | Maximise |
+| Function 4 | 30 | 4 | Maximise |
+| Function 5 | 20 | 4 | Maximise |
+| Function 6 | 20 | 5 | Maximise |
+| Function 7 | 30 | 6 | Maximise |
+| Function 8 | 40 | 8 | Maximise |
 
-For each unknown function, the input is a **query point** submitted in the required challenge format:
+The files are stored under [`data/`](data/) in folders named `function_1` through `function_8`. Each function folder contains:
 
-`x1-x2-x3-...-xn`
+- `initial_inputs.npy` – evaluated input points
+- `initial_outputs.npy` – corresponding observed outputs
+- `README.md` – a function-specific explanation
 
-Each coordinate:
-- starts with `0`
-- is written to **six decimal places**
-- represents one dimension of the function input space
+The observations in the data folders are genuine course-provided data. Model-generated query recommendations are stored separately under [`results/`](results/) and have not been evaluated by the hidden functions.
 
-Example for a 2D function:
+Further information about the dataset, its composition, limitations and appropriate uses is provided in the [datasheet](docs/datasheet.md).
 
-`0.123456-0.654321`
+## 3. Inputs and outputs
 
-The dimensionality varies by function, but the exact mathematical structure of each function is unknown.
+For every function, an input is a point containing the required number of coordinates. Each coordinate must be between 0 and 1.
 
-The output is the **response value** returned after the query is evaluated. This value acts as the performance signal that guides future decisions. Over time, the available dataset grows by one evaluated point per function in each module.
+When preparing a query for submission, coordinates are formatted to six decimal places and separated by hyphens. For example, a two-dimensional query may be written as:
 
-## 3. Challenge objectives
+```text
+0.123456-0.654321
+```
 
-The objective of the challenge is to identify **increasingly better query points** for each of the unknown functions. In practical terms, the aim is to improve performance iteratively while learning about the hidden response surfaces.
+The output is a single numerical value returned by the hidden function. All eight functions are treated as **maximisation problems**, meaning that a higher observed output is considered better.
 
-The challenge includes several key constraints:
-- the true form of the functions is unknown
-- the number of queries is limited
-- only one new point per function can be submitted in each round
-- feedback is delayed until the next round
-- decisions must be made using incomplete and evolving information
+For functions whose outputs are negative, the highest value is the one closest to zero. However, this does not imply that zero is necessarily the unknown global optimum.
 
-The project is therefore not just about chasing the current best value. It is about building a strategy that uses each limited query as effectively as possible.
+## 4. Function contexts
 
-## Model
+The functions are synthetic, but the course provides illustrative applications showing how similar optimisation problems may occur in practice.
 
-This project does not rely on a single fixed predictive model. Instead, it uses an **iterative black-box optimisation strategy** to choose new query points for eight unknown functions.
+| Function | Illustrative context |
+|---|---|
+| Function 1 | Detecting a source in a two-dimensional area with sparse non-zero readings |
+| Function 2 | Maximising a noisy log-likelihood surface containing local optima |
+| Function 3 | Selecting three compound quantities while minimising transformed adverse effects |
+| Function 4 | Tuning four parameters in a dynamic warehouse-placement system |
+| Function 5 | Maximising the yield of a four-variable chemical process |
+| Function 6 | Optimising five recipe inputs using a negative combined score |
+| Function 7 | Tuning six machine-learning hyperparameters |
+| Function 8 | Optimising a complex eight-dimensional system |
 
-Over the course of the capstone, I mainly used:
-- evidence-based local refinement
-- exploratory search heuristics
-- ideas from surrogate modelling such as:
-  - local or linear regression
-  - threshold-based classification
-  - SVM-style boundary thinking
+These contexts are explanatory analogies. The repository contains synthetic function observations rather than real medical, industrial or business data.
 
-The goal was not to fully reconstruct the hidden functions, but to use the available evaluations to identify increasingly promising regions of the search space.
+## 5. Technical approach
 
-## Exploration and exploitation strategy
+### Exploratory analysis
 
-A central part of the project was deciding how strongly to favour **exploration** versus **exploitation**.
+For each function, the program:
 
-In practice, the main hyperparameters of my strategy were the rules that controlled:
-- how widely I explored uncertain regions
-- how aggressively I refined locally promising areas
-- how much trust I placed in neighbourhood patterns versus isolated strong points
+1. loads the official NumPy input and output arrays
+2. validates their dimensions and numerical values
+3. identifies the strongest observed result
+4. summarises the observed output distribution
+5. produces visualisations of the available observations
 
-Early rounds favoured broader exploration because the search space was poorly understood. Later rounds became more selective, with greater emphasis on stable local structure and repeated strong performance. This made the optimisation process more evidence-based and reduced the risk of overcommitting too early to misleading patterns.
+Two-dimensional input-space plots are produced for Functions 1 and 2. For higher-dimensional functions, output-distribution plots are used because a single two-dimensional plot cannot represent the complete response surface.
 
-## 4. Technical approach
+### Gaussian Process surrogate
 
-My strategy across the capstone evolved from **broad exploration** toward a more balanced and evidence-based approach.
+A **Gaussian Process Regressor** is fitted separately to each function. The surrogate supplies a predicted mean output and an estimate of predictive uncertainty for each candidate input.
 
-In the first round, I relied mainly on:
-- sample diversity
-- avoiding already crowded regions
-- cautious exploratory moves because very little was known
+A Matérn kernel is used because it can represent response surfaces that are not perfectly smooth. Input and output scaling support numerical stability across functions with different output ranges.
 
-In later rounds, I began using the observed outputs more directly by looking for:
-- locally promising regions
-- repeated stronger values
-- signs of smoother versus unstable behaviour
-- neighbourhood patterns rather than isolated strong points
+### Candidate generation
 
-A central part of my strategy is balancing **exploration** and **exploitation**:
-- **exploration** means sampling uncertain or weakly explored regions
-- **exploitation** means querying near regions that already appear promising
+Candidate input points are generated using **Latin Hypercube Sampling** within the valid interval `[0, 1]`. This gives structured coverage without requiring an exhaustive grid, which becomes impractical as dimensionality increases.
 
-If nearby points show relatively strong and consistent outputs, I lean toward exploitation. If the evidence is sparse, noisy or contradictory, I prioritise exploration so that I can learn more before committing too strongly.
+### Acquisition functions
 
-At different stages, I considered how the following methods could support decision-making:
-- linear or local regression for rough trend estimation in smoother regions
-- logistic regression or threshold-based classification to separate stronger and weaker regions
-- SVMs, especially soft-margin and kernel SVMs, to classify promising versus weak regions when boundaries may be non-linear
-- more advanced surrogate-style approaches such as Bayesian optimisation reasoning
+The pipeline compares three Bayesian optimisation acquisition functions:
 
-What makes this approach useful is that I treat the challenge as both an **optimisation problem** and a **learning problem**. I am not only trying to improve the next query result, but also trying to make each query informative enough to improve future rounds.
+- **Upper Confidence Bound (UCB)** – combines predicted performance and uncertainty
+- **Expected Improvement (EI)** – estimates expected improvement over the current best observation
+- **Probability of Improvement (PI)** – estimates the probability that a candidate will improve on the current best observation
 
-## Results
+These methods balance:
 
-The main result of the project was an increasingly refined **query strategy** across multiple rounds of black-box optimisation.
+- **exploration** – investigating uncertain or weakly sampled areas
+- **exploitation** – refining areas predicted to perform strongly
 
-Over time, I identified that:
-- some functions responded well to **local refinement**
-- others required more persistent **exploration**
-- the strongest decisions usually came from **clusters of nearby strong points**, not isolated outliers
+The code generates one recommended candidate from each acquisition method. These recommendations are retained for comparison and are not presented as confirmed improvements.
 
-The most important lessons from the results were:
-- neighbourhood structure often matters more than one strong point
-- repeated local evidence is more reliable than isolated success
-- optimisation under uncertainty benefits from balancing exploration and exploitation carefully
-- adapting the strategy as more evidence becomes available is more effective than using one fixed rule throughout
+## 6. Strategy development
 
-## Repository contents
+My broader strategy developed from exploratory reasoning towards a systematic Bayesian optimisation workflow. During the capstone, I considered ideas including:
 
-- [docs/datasheet.md](docs/datasheet.md) - dataset documentation
-- [docs/model-card.md](docs/model-card.md) - model documentation
-- [docs/README.md](docs/README.md) - documentation overview
-- [notebooks/bbo_analysis.ipynb](notebooks/bbo_analysis.ipynb) - exploratory analysis of query history and optimisation trends
-- `results/` - summaries, observations, and supporting materials where applicable
+- local refinement around promising observations
+- neighbourhood-based reasoning
+- regression for estimating local trends
+- threshold-based classification of stronger and weaker regions
+- SVM-style boundary reasoning
+- clustering-style identification of recurring regions
+- uncertainty-aware Bayesian optimisation
 
-## 5. Transparency and documentation
+Regression, classification, SVM, clustering and neural-network ideas influenced my interpretation of the challenge. However, the reproducible final pipeline uses a **Gaussian Process surrogate with UCB, EI and PI acquisition functions**. This distinction prevents conceptual methods considered during the course from being confused with models implemented in the final code.
 
-This repository includes supporting documentation to improve transparency, reproducibility and interpretability:
+## 7. Results
 
-- [Datasheet](docs/datasheet.md) - documents the query history and function evaluation dataset, including motivation, composition, collection process, intended uses, distribution and maintenance
-- [Model Card](docs/model-card.md) - documents the optimisation approach, intended uses, assumptions, limitations, strategy evolution and transparency considerations
+The analysis records the strongest observation in the official starter data for each function.
 
-This README is intended to be a living document and may continue to be updated to reflect further refinements, insights and supporting materials.
+| Function | Best observed output |
+|---|---:|
+| Function 1 | `7.710875e-16` |
+| Function 2 | `0.611205` |
+| Function 3 | `-0.034835` |
+| Function 4 | `-4.025542` |
+| Function 5 | `1088.859618` |
+| Function 6 | `-0.714265` |
+| Function 7 | `1.364968` |
+| Function 8 | `9.598482` |
+
+The generated results include:
+
+- an observed-data summary for every function
+- observed-output distribution plots
+- two-dimensional input-space plots for Functions 1 and 2
+- candidate recommendations produced by UCB, EI and PI
+- a combined recommendations file covering all eight functions
+
+The combined recommendations are available in [`results/all_acquisition_recommendations.csv`](results/all_acquisition_recommendations.csv).
+
+### Interpretation of results
+
+The best observed values are genuine results from the course-provided data. In contrast, the acquisition recommendations are predictions from fitted surrogate models.
+
+The recommendations cannot be described as improvements, successful queries or global optima unless they are submitted to the hidden functions and evaluated. Therefore:
+
+- observed outputs are reported as evidence
+- model predictions are reported as estimates
+- recommended inputs are reported as unevaluated candidates
+- no claim of finding a global optimum is made
+
+## 8. Repository structure
+
+```text
+Capstone-Project/
+├── README.md
+├── requirements.txt
+├── data/
+│   ├── README.md
+│   ├── function_1/
+│   ├── function_2/
+│   ├── function_3/
+│   ├── function_4/
+│   ├── function_5/
+│   ├── function_6/
+│   ├── function_7/
+│   └── function_8/
+├── docs/
+│   ├── README.md
+│   ├── datasheet.md
+│   ├── model-card.md
+│   └── module-22-strategy.md
+├── notebooks/
+│   ├── README.md
+│   └── bbo_analysis.ipynb
+├── results/
+│   ├── all_acquisition_recommendations.csv
+│   ├── function_1/
+│   ├── function_2/
+│   ├── function_3/
+│   ├── function_4/
+│   ├── function_5/
+│   ├── function_6/
+│   ├── function_7/
+│   └── function_8/
+└── src/
+    └── bbo_function_analysis.py
+```
+
+## 9. Repository contents
+
+- [`data/`](data/) – official course-provided observations for all eight functions
+- [`data/README.md`](data/README.md) – data provenance and organisation
+- [`src/bbo_function_analysis.py`](src/bbo_function_analysis.py) – reproducible Bayesian optimisation pipeline
+- [`notebooks/bbo_analysis.ipynb`](notebooks/bbo_analysis.ipynb) – notebook-based analysis
+- [`results/`](results/) – generated summaries, plots and candidate recommendations
+- [`results/all_acquisition_recommendations.csv`](results/all_acquisition_recommendations.csv) – combined acquisition recommendations
+- [`docs/datasheet.md`](docs/datasheet.md) – dataset documentation
+- [`docs/model-card.md`](docs/model-card.md) – model documentation
+- [`docs/module-22-strategy.md`](docs/module-22-strategy.md) – strategy reflection
+- [`requirements.txt`](requirements.txt) – Python package requirements
+
+## 10. Reproducing the analysis
+
+The project requires Python 3 and the packages listed in `requirements.txt`.
+
+Install the dependencies from the repository root:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run the analysis for all eight functions:
+
+```bash
+python src/bbo_function_analysis.py --all
+```
+
+Run an individual function by providing its number, for example:
+
+```bash
+python src/bbo_function_analysis.py --function 3
+```
+
+Generated summaries, plots and recommendations are saved under `results/`.
+
+The notebook can be opened using Jupyter Notebook, JupyterLab or Google Colab:
+
+```bash
+jupyter notebook notebooks/bbo_analysis.ipynb
+```
+
+All notebook cells should be run from beginning to end using the official data files.
+
+## 11. Transparency, assumptions and limitations
+
+The main assumptions of the implemented approach are:
+
+- the observed data contains some learnable structure
+- nearby inputs may sometimes produce related outputs
+- Gaussian Process uncertainty is informative for candidate selection
+- the observations are sufficient to fit a preliminary surrogate
+
+Important limitations include:
+
+- the number of observations is limited
+- the hidden mathematical functions are unavailable
+- some regions of the search spaces may be poorly represented
+- higher-dimensional spaces are difficult to cover with limited observations
+- the Gaussian Process may not accurately represent every hidden function
+- acquisition-function recommendations remain unevaluated
+- no guarantee of global optimality or convergence is provided
+
+The [datasheet](docs/datasheet.md) documents data provenance, composition, intended uses and limitations. The [model card](docs/model-card.md) explains model design, intended use, assumptions, performance reporting and possible failure modes.
+
+## 12. Ethical and responsible use
+
+The dataset contains synthetic numerical observations and does not include personal or demographic information.
+
+The real-world descriptions associated with the functions are illustrative. Generated recommendations must not be used directly for medical, industrial, educational or other high-stakes decisions.
+
+The project is intended for educational demonstration of black-box optimisation, Bayesian reasoning and transparent machine-learning documentation.
+
+## 13. Conclusion
+
+This project demonstrates a complete workflow for analysing limited observations from eight hidden functions and producing evidence-based candidate queries.
+
+The final approach combines:
+
+- official observed data
+- exploratory summaries and visualisations
+- Gaussian Process surrogate modelling
+- structured candidate generation
+- comparison of three acquisition functions
+- transparent separation of observations and predictions
+- reproducible code and supporting documentation
+
+The central lesson is that effective black-box optimisation requires both exploration and exploitation. A useful optimisation system must seek strong predicted outcomes while recognising uncertainty, limited evidence and the possibility that unexplored regions may contain better solutions.
+
