@@ -80,7 +80,7 @@ Over the course of the capstone, I mainly used:
 
 The goal was not to fully reconstruct the hidden functions, but to use the available evaluations to identify increasingly promising regions of the search space.
 
-## Hyperparameter Optimisation
+## Exploration and exploitation strategy
 
 A central part of the project was deciding how strongly to favour **exploration** versus **exploitation**.
 
