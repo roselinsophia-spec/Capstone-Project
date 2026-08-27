@@ -22,8 +22,9 @@ function folder contains:
 | 7 | `(30, 6)` | `(30,)` | Maximise |
 | 8 | `(40, 8)` | `(40,)` | Maximise |
 
-The observed values in this folder are genuine course-provided data.
-Model-generated query recommendations are stored separately under `results/`
-and must not be interpreted as evaluated hidden-function outputs.
+## Data provenance
 
-No peer query history or peer-generated data is included.
+The input points and observed output values in this folder are genuine course-provided starter data from Mini-lesson 12.8.
+Model-generated query recommendations are stored separately in the `results/` folder. 
+These recommendations have not been evaluated by the hidden functions and must not be interpreted as observed results.
+
